@@ -1,6 +1,8 @@
 PYTHON ?= python3
 RUFF ?= $(shell command -v ruff 2>/dev/null || echo .venv/bin/ruff)
 DIST := dist/anchor-training.zip
+# Keep the skill folder clean: it is copied as-is into other agents' skill directories.
+export RUFF_CACHE_DIR ?= $(HOME)/.cache/ruff/new-circle
 
 .PHONY: lint test check package
 
