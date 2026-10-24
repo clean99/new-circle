@@ -66,6 +66,22 @@ def record_now(paths, fields, at=None):
     return episode_model.ordered(row)
 
 
+def practice_scenes(paths, rows=None):
+    """Scenes whose source episode I have not rejected."""
+    rows = episode_model.load(paths) if rows is None else rows
+    rejected = {row["id"] for row in rows if row.get("review") == "rejected"}
+    return [scene for scene in scene_model.load_all(paths) if scene.episode not in rejected]
+
+
+def review(paths, identity, status, note=""):
+    rows = episode_model.load(paths)
+    row = episode_model.find(rows, identity)
+    updated = episode_model.set_review(row, status, note)
+    rows[rows.index(row)] = updated
+    episode_model.save(paths, rows)
+    return episode_model.ordered(updated)
+
+
 def next_action(paths, key):
     if not paths.actions.exists():
         return ("健康", "出门走 10 分钟")
@@ -109,6 +125,12 @@ def apply_op(paths, op, rows, renames, day):
     if kind == "ladder":
         rung = complete_rung(paths, op["id"], on, op["suds"], op.get("note", ""))
         return "completed" + ("(cleared)" if rung.cleared else "")
+    if kind == "review":
+        identity = renames.get(op.get("id"), op.get("id"))
+        row = episode_model.find(rows, identity)
+        rows[rows.index(row)] = episode_model.set_review(row, op.get("status"), op.get("note", ""))
+        episode_model.save(paths, rows)
+        return op.get("status")
     view = mark_view(paths, op["id"], on, op.get("remembered", True) is not False)
     return "reviewed(next " + view.due.isoformat() + ")"
 
@@ -172,8 +194,11 @@ def validate_all(paths):
         except AnchorError as error:
             errors.append(f"{name}: {error}")
     try:
+        rejected = {row.get("id") for row in rows if row.get("review") == "rejected"}
         for scene in scene_model.load_all(paths):
             scene_errors, scene_warnings = scene_model.validate(scene, episode_ids)
+            if scene.episode in rejected:
+                scene_warnings.append("episode_rejected_scene_skipped")
             errors += [f"scene {scene.id}: {item}" for item in scene_errors]
             warnings += [f"scene {scene.id}: {item}" for item in scene_warnings]
     except AnchorError as error:

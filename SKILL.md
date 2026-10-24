@@ -1,6 +1,6 @@
 ---
 name: anchor-training
-description: 抛锚与主体性训练。用户说 /now /fact /drill /ladder /view /weekly，或说"抛锚""她说想休息/自己待会/想分手""我想去确认""我很不安""患得患失""想说不但说不出口""主体性""情感演练"时使用；任何会话聊到感情、关系或强烈情绪时，也按本技能补齐一条 episode。数据全部在 Life OS 知识仓库的 areas/relationship/。
+description: 抛锚与主体性训练。用户说 /now /fact /drill /ladder /view /review /weekly，或说"抛锚""她说想休息/自己待会/想分手""我想去确认""我很不安""患得患失""想说不但说不出口""主体性""情感演练"时使用；任何会话聊到感情、关系或强烈情绪时，也按本技能补齐一条 episode。数据全部在 Life OS 知识仓库的 areas/relationship/。
 ---
 
 # anchor-training：抛锚与主体性训练
@@ -28,6 +28,7 @@ description: 抛锚与主体性训练。用户说 /now /fact /drill /ladder /vie
 | `/drill`、`/drill hot` | 每日 10 分钟演练；hot 先 60 秒爬楼/单车冲刺 | [protocols.md#drill](references/protocols.md#drill) |
 | `/ladder` | 给出主体性阶梯的下一级，记录完成与 SUDS | [protocols.md#ladder](references/protocols.md#ladder) |
 | `/view` | 推一条到期见地（1/3/7/14/30 天间隔） | [protocols.md#view](references/protocols.md#view) |
+| `/review` | 核对历史抽取的 episode：确认、否掉（否掉的退出演练和周报），或导入抽样表里的勾 | [protocols.md#review](references/protocols.md#review) |
 | `/weekly` | 周复盘：未确认率、执行率、冲动趋势、校准、恢复、演练、阶梯、miss 复盘、给咨询师的话 | [protocols.md#weekly](references/protocols.md#weekly) |
 
 每次会话第一次用到本技能时，先看有没有到了 24–72 小时追问窗口的 episode（`anchor.py status` 或读 `episodes.jsonl` 里 `outcome` 为 null 且已过 24 小时的），有就先问一句事实，每条一句。

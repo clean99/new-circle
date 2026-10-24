@@ -208,6 +208,22 @@ def due_follow_ups(rows, at):
     return due
 
 
+def set_review(row, status, note=""):
+    """Record my own check of an extracted episode; a rejected one stays on file but leaves practice."""
+    if status not in REVIEWS:
+        raise AnchorError("invalid_review", str(status))
+    updated = dict(row, review=status)
+    note = (note or "").strip()
+    if note:
+        updated["notes"] = "；".join(part for part in (row.get("notes"), "核对：" + note) if part)
+    require_valid(updated)
+    return updated
+
+
+def active(rows):
+    return [row for row in rows if row.get("review") != "rejected"]
+
+
 def find(rows, identity):
     for row in rows:
         if row["id"] == identity:

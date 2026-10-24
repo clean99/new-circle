@@ -127,6 +127,51 @@ class FlowTest(unittest.TestCase):
         self.assertIn("episode_not_found", err)
 
 
+class ReviewTest(unittest.TestCase):
+    def setUp(self):
+        self.life = LifeOS()
+        rows = [episode(review="pending", origin="export"),
+                episode("ep-2026-08-29-01", review="pending", origin="export", miss=True)]
+        self.life.paths.episodes.write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+                                            encoding="utf-8")
+
+    def tearDown(self):
+        self.life.close()
+
+    def test_confirm_reject_and_listing(self):
+        code, data, _ = run(self.life, "review")
+        self.assertEqual((code, data["counts"]["pending"]), (0, 2))
+        code, data, _ = run(self.life, "review", "ep-2026-08-28-01", "--reject", "--note", "不是我写的")
+        self.assertEqual(data["episode"]["review"], "rejected")
+        self.assertIn("核对：不是我写的", data["episode"]["notes"])
+        code, _, err = run(self.life, "review", "ep-2026-08-29-01")
+        self.assertIn("review_needs_confirm_or_reject", err)
+
+    def test_rejected_episode_leaves_practice_and_metrics(self):
+        run(self.life, "review", "ep-2026-08-28-01", "--reject")
+        code, _, err = run(self.life, "drill")
+        self.assertIn("no_scenes", err)
+        code, data, _ = run(self.life, "weekly", "--week", "2026-35")
+        self.assertEqual(data["metrics"]["episodes"], 1)
+        code, data, _ = run(self.life, "validate")
+        self.assertTrue(any("episode_rejected_scene_skipped" in item for item in data["warnings"]))
+
+    def test_sheet_marks(self):
+        sheet = self.life.repo / "sheet.md"
+        sheet.write_text("## 1. ep-2026-08-28-01\n\n核对：☑ 对　□ 错：\n\n"
+                         "## 2. ep-2026-08-29-01\n\n核对：□ 对　□ 错：日期不对，是 8 月 30 日\n", encoding="utf-8")
+        code, data, _ = run(self.life, "review", "--sheet", str(sheet))
+        self.assertEqual([tuple(item) for item in data["applied"]],
+                         [("ep-2026-08-28-01", "confirmed", ""), ("ep-2026-08-29-01", "rejected", "日期不对，是 8 月 30 日")])
+        self.assertEqual(extract.parse_sheet("## 1. ep-2026-08-28-01\n\n核对：□ 对　□ 错：\n"), [])
+
+    def test_review_through_inbox(self):
+        inbox.write(self.life.paths, [{"op": "review", "id": "ep-2026-08-29-01", "status": "confirmed"}],
+                    datetime(2026, 10, 26, tzinfo=TZ).date())
+        self.assertEqual(service.ingest(self.life.paths, datetime(2026, 10, 26, tzinfo=TZ).date())[0][2],
+                         "confirmed")
+
+
 class InboxTest(unittest.TestCase):
     def setUp(self):
         self.life = LifeOS()

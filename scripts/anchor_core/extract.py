@@ -322,6 +322,30 @@ def sample(rows, count, seed):
     return sorted(random.Random(seed).sample(pool, count), key=lambda row: row["id"])
 
 
+SHEET_BLOCK = re.compile(r"^## \d+\. (ep-\d{4}-\d{2}-\d{2}-\d{2})\s*$", re.M)
+SHEET_CHECK = re.compile(r"^核对：(.*)$", re.M)
+SHEET_WRONG = re.compile(r"错[：:]\s*(\S.*)")
+SHEET_RIGHT = re.compile(r"[☑✓✔✅xX■√]\s*对|对\s*[☑✓✔✅√]")
+
+
+def parse_sheet(text):
+    """Read my marks from a sample sheet: 「错：原因」 rejects, a tick next to 「对」 confirms."""
+    marks = []
+    blocks = list(SHEET_BLOCK.finditer(text))
+    for index, block in enumerate(blocks):
+        end = blocks[index + 1].start() if index + 1 < len(blocks) else len(text)
+        checks = SHEET_CHECK.findall(text[block.end():end])
+        if not checks:
+            continue
+        line = checks[-1]
+        wrong = SHEET_WRONG.search(line)
+        if wrong:
+            marks.append((block.group(1), "rejected", wrong.group(1).strip()))
+        elif SHEET_RIGHT.search(line):
+            marks.append((block.group(1), "confirmed", ""))
+    return marks
+
+
 def sample_report(repo, rows, seed, population, day, excerpt=700):
     """Side-by-side check sheet: extracted fields next to the original message."""
     index = message_index(repo, [row["source_ref"] for row in rows])
@@ -329,7 +353,8 @@ def sample_report(repo, rows, seed, population, day, excerpt=700):
                          "与原文对照，交本人核对。", ["抽样核对", "extraction sample"], day),
              f"# 抽取抽样核对（{len(rows)}/{population}，seed {seed}）", "",
              "逐条看：触发是不是对方可观察的言行？我的想法、身体是不是我当时的原话？行动和结果有没有被改写？"
-             "有问题直接在条目下写「错：……」，改完运行 `anchor.py validate`。", ""]
+             "对的把「□ 对」改成「☑ 对」，错的在「错：」后面写原因；改完运行 "
+             "`anchor.py review --sheet <本文件>` 一次导入（或在 bot 里说「1–15 对，16 错：……」）。", ""]
     for number, row in enumerate(rows, 1):
         message = index.get(row["source_ref"])
         original = message["text"] if message else "（原文未找到）"

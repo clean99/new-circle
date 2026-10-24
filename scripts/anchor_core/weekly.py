@@ -3,7 +3,7 @@
 from datetime import date, timedelta
 from statistics import mean, median
 
-from .episodes import CHECKING, awaiting_fact
+from .episodes import CHECKING, active, awaiting_fact
 from .now import choose_script
 from .store import frontmatter, parse_date
 
@@ -58,6 +58,7 @@ def calibration(rows):
 
 
 def metrics(episode_rows, drill_rows, rungs, view_list, start, end):
+    episode_rows = active(episode_rows)
     week = in_range(episode_rows, start, end)
     acted = [row for row in week if row.get("action")]
     judged = [row for row in week if row.get("miss") is not None]

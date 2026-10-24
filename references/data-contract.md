@@ -111,6 +111,7 @@ conditions: [半夜, 电话]
 {"op":"drill","date":"2026-10-26","scene":"sc-…","view":"V03","suds_before":60,"suds_after":35,"within_3s":true,"verbatim":true,"held_30s":true}
 {"op":"ladder","id":"L01","suds":30,"date":"2026-10-27","note":""}
 {"op":"view","id":"V03","date":"2026-10-26","remembered":true}
+{"op":"review","id":"ep-2026-08-25-03","status":"confirmed","note":""}
 ```
 
 - `episode` 可以不带 `id`（合并时分配）；带了但与已有记录冲突时自动换号，同一批后续 `fact` 跟着改号。与已有记录完全相同的视为重复。

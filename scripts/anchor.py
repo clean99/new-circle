@@ -113,7 +113,7 @@ def cmd_due(args, paths, day):
 
 
 def cmd_drill(args, paths, day):
-    scenes = scene_model.load_all(paths)
+    scenes = service.practice_scenes(paths)
     if args.scene:
         scene = next((item for item in scenes if item.id == args.scene), None)
         if scene is None:
@@ -146,7 +146,7 @@ def cmd_drill_log(args, paths, day):
 def cmd_drill_plan(args, paths, day):
     start = parse_date(args.start) if args.start else day
     hot_days = {int(item) for item in conditions(args.hot_days)} if args.hot_days else set()
-    plan = drill_model.plan(scene_model.load_all(paths), service.load_views(paths),
+    plan = drill_model.plan(service.practice_scenes(paths), service.load_views(paths),
                             drill_model.load(paths), episode_model.load(paths), start, args.days)
     written = []
     for number, (when, scene, view) in enumerate(plan, 1):
@@ -310,6 +310,30 @@ def cmd_init(args, paths, day):
     emit(args, {"created": created}, [f"创建 {item}" for item in created] or ["已存在，未改动。"])
 
 
+def cmd_review(args, paths, day):
+    if args.sheet:
+        sheet = Path(args.sheet)
+        sheet = sheet if sheet.is_absolute() else paths.repo / sheet
+        marks = extract_model.parse_sheet(sheet.read_text(encoding="utf-8"))
+        for identity, status, note in marks:
+            service.review(paths, identity, status, note)
+        emit(args, {"applied": marks}, [f"{identity}: {status}" + (f"（{note}）" if note else "")
+                                        for identity, status, note in marks] or ["核对表里还没有打勾或写「错：」。"])
+        return
+    if args.id:
+        if args.confirm == args.reject:
+            raise AnchorError("review_needs_confirm_or_reject")
+        row = service.review(paths, args.id, "confirmed" if args.confirm else "rejected", args.note or "")
+        emit(args, {"episode": row}, [f"{row['id']}：{row['review']}"])
+        return
+    rows = [row for row in episode_model.load(paths) if row.get("review")]
+    counts = {status: sum(row["review"] == status for row in rows) for status in episode_model.REVIEWS}
+    pending = [row for row in rows if row["review"] == "pending"][:args.limit]
+    lines = [f"待核对 {counts['pending']}｜已确认 {counts['confirmed']}｜已否掉 {counts['rejected']}"]
+    lines += [f"{row['id']}：{now_model.shorten(row['my_thought'] or row['trigger'])}" for row in pending]
+    emit(args, {"counts": counts, "pending": [row["id"] for row in pending]}, lines)
+
+
 def cmd_commit(args, paths, day):
     subprocess.run(["git", "-C", str(paths.repo), "add", "--", AREA], check=True)
     staged = subprocess.run(["git", "-C", str(paths.repo), "diff", "--cached", "--quiet", "--", AREA])
@@ -443,6 +467,15 @@ def build_parser():
     sample.add_argument("--seed", type=int, required=True)
     sample.add_argument("--out", required=True, help="写入的 Markdown 路径（仓库内相对路径或绝对路径）")
     sample.set_defaults(func=cmd_extract_sample)
+
+    review = sub.add_parser("review", help="核对历史抽取的 episode：确认、否掉，或读取抽样表里的勾")
+    review.add_argument("id", nargs="?")
+    review.add_argument("--confirm", action="store_true")
+    review.add_argument("--reject", action="store_true")
+    review.add_argument("--note")
+    review.add_argument("--sheet", help="抽样核对表路径，读取「☑ 对」与「错：原因」")
+    review.add_argument("--limit", type=int, default=10)
+    review.set_defaults(func=cmd_review)
 
     commit = sub.add_parser("commit", help="只提交 areas/relationship 的改动")
     commit.add_argument("-m", "--message", default="fact: areas/relationship")

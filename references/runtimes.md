@@ -27,7 +27,7 @@ ln -sfn ~/.codex/skills/anchor-training ~/.claude/skills/anchor-training
 
 写入：life-os MCP 只允许 `update_note` 写 `.md`，不能直接写 jsonl。所以：
 
-- `/now`、`/fact`、演练记录、阶梯完成、见地复习 → 读 `areas/relationship/inbox.md`（拿 sha）→ 在 ```` ```jsonl ```` 代码块末尾追加一行操作（格式见 [data-contract.md](data-contract.md#inboxmd-操作)）→ `update_note`（`expected_sha` 用刚读到的，`name`/`description` 保持原值）。冲突就重读再追加，最多 3 次。
+- `/now`、`/fact`、演练记录、阶梯完成、见地复习、`/review` 核对 → 读 `areas/relationship/inbox.md`（拿 sha）→ 在 ```` ```jsonl ```` 代码块末尾追加一行操作（格式见 [data-contract.md](data-contract.md#inboxmd-操作)）→ `update_note`（`expected_sha` 用刚读到的，`name`/`description` 保持原值）。冲突就重读再追加，最多 3 次。
 - 新 episode 的 `id`：读 `episodes.jsonl` 和 `inbox.md`，取当天未用的最小序号；不确定就不带 `id`，合并时分配。`/fact` 引用尚在队列里的 episode 时直接用它的 `id`。
 - `/weekly`：如果有代码执行环境，把 `episodes.jsonl`、`drills.jsonl`、`views.md`、`ladder.md` 和队列内容读出来，在沙盒里建一个最小目录（`AGENTS.md`、`raw/`、`areas/relationship/…`），运行 `python3 scripts/anchor.py --repo <沙盒> ingest` 和 `weekly`，再把结果用 `update_note` 写到 `areas/relationship/weekly/YYYY-WW.md`。没有代码执行时按 [protocols.md#weekly](protocols.md#weekly) 的定义手算，并在周报里注明"手算"。
 - `/drill`：读 `scenes/`、`drills.jsonl`、`views.md`，按 [protocols.md#drill](protocols.md#drill) 选题；或直接用 `drills/` 里预生成的当天演练稿。语音模式下由 bot 说出 cue。

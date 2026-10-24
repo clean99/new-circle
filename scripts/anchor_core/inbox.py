@@ -1,7 +1,7 @@
 """Queue for clients that can only write Markdown (for example Claude.ai through the life-os MCP).
 
 The queue is a fenced ```jsonl block inside areas/relationship/inbox.md. Each line is one
-operation: {"op": "episode" | "fact" | "drill" | "ladder" | "view", ...}. `ingest` applies the
+operation: {"op": "episode" | "fact" | "drill" | "ladder" | "view" | "review", ...}. `ingest` applies the
 operations in order and keeps only the lines that failed.
 """
 
@@ -12,7 +12,7 @@ from . import episodes as episode_model
 from .store import AnchorError, dumps, frontmatter, write_markdown
 
 BLOCK = re.compile(r"```jsonl\n(.*?)```", re.S)
-OPS = ("episode", "fact", "drill", "ladder", "view")
+OPS = ("episode", "fact", "drill", "ladder", "view", "review")
 
 HEADER = """# 抛锚训练待合并队列
 
