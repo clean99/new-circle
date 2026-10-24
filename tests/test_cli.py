@@ -107,6 +107,20 @@ class FlowTest(unittest.TestCase):
         self.assertEqual((self.life.paths.area / "views.md").read_text(encoding="utf-8"), "keep")
         self.assertTrue(self.life.paths.weekly.is_dir())
 
+    def test_now_without_numbers_records_nulls(self):
+        code, data, _ = run(self.life, "now", "--trigger", "她半天没回消息", "--thought", "她在跟别人玩", "--no-reply")
+        self.assertEqual((code, data["episode"]["certainty"], data["episode"]["urge"]), (0, None, None))
+        self.assertIn("确定 ?，冲动 ?", data["reply"][0])
+        self.assertFalse(any("要回对方" in line for line in data["reply"]))
+
+    def test_status_flags_missing_area_and_unknown_sync(self):
+        for name in ("ladder.md", "views.md"):
+            (self.life.paths.area / name).unlink()
+        code, data, _ = run(self.life, "status")
+        self.assertEqual((code, data["sync"], data["rung"]), (0, None, None))
+        code, _, err = run(self.life, "ladder")
+        self.assertIn("ladder_missing", err)
+
     def test_unknown_episode_is_reported(self):
         code, _, err = run(self.life, "fact", "ep-2026-01-01-01", "--outcome", "unverifiable")
         self.assertEqual(code, 2)

@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 from zoneinfo import ZoneInfo
 
@@ -104,6 +105,16 @@ def resolve_repo(explicit=None, env=None, home=None):
             return Paths(path.resolve())
         raise AnchorError("not_a_life_os_checkout", f"{origin} -> {path}")
     raise AnchorError("life_os_repo_not_found", "pass --repo or set LIFE_OS_REPO")
+
+
+def sync_state(repo):
+    """(ahead, behind) against the upstream branch from local refs only, or None when unknown."""
+    result = subprocess.run(["git", "-C", str(repo), "rev-list", "--left-right", "--count", "HEAD...@{upstream}"],
+                            capture_output=True, text=True)
+    if result.returncode != 0:
+        return None
+    ahead, behind = (int(part) for part in result.stdout.split())
+    return ahead, behind
 
 
 def now():

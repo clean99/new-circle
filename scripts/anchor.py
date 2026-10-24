@@ -20,7 +20,7 @@ from anchor_core import service  # noqa: E402
 from anchor_core import views as view_model  # noqa: E402
 from anchor_core import weekly as weekly_model  # noqa: E402
 from anchor_core.store import (  # noqa: E402
-    AREA, TZ, AnchorError, now, parse_date, read_jsonl, resolve_repo, write_markdown)
+    AREA, TZ, AnchorError, now, parse_date, read_jsonl, resolve_repo, sync_state, write_markdown)
 
 
 def yes_no(value):
@@ -55,12 +55,22 @@ def cmd_status(args, paths, day):
     view = view_model.due(service.load_views(paths), day)
     rung = ladder_model.current(service.load_rungs(paths))
     queued = len(service.inbox_model.read(paths))
+    ladder_text = "未建立（anchor.py init）"
+    if paths.ladder.exists():
+        ladder_text = f"{rung.id} {rung.task}" if rung else "全部完成"
     lines = [f"episodes {len(rows)}｜待回填 {len(due)}｜inbox {queued}",
              "今日见地：" + (f"{view.id} {view.text}" if view else "无到期"),
-             "阶梯：" + (f"{rung.id} {rung.task}" if rung else "全部完成")]
+             "阶梯：" + ladder_text]
+    if not paths.area.exists():
+        lines.insert(0, f"{AREA} 不存在：先 git pull，或运行 anchor.py init。")
     lines += [f"追问事实：{row['id']}（{state}）{now_model.shorten(row['my_thought'])}" for row, state in due]
+    sync = sync_state(paths.repo)
+    if sync and sync[1]:
+        lines.append(f"注意：Life OS 落后远端 {sync[1]} 个提交" + (f"、本地多 {sync[0]} 个" if sync[0] else "")
+                     + "，先 git pull --rebase 再写。")
     emit(args, {"episodes": len(rows), "due": [row["id"] for row, _ in due], "inbox": queued,
-                "view": view.id if view else None, "rung": rung.id if rung else None}, lines)
+                "view": view.id if view else None, "rung": rung.id if rung else None,
+                "sync": {"ahead": sync[0], "behind": sync[1]} if sync else None}, lines)
 
 
 def cmd_now(args, paths, day):
@@ -147,6 +157,8 @@ def cmd_drill_plan(args, paths, day):
 
 
 def cmd_ladder(args, paths, day):
+    if not paths.ladder.exists():
+        raise AnchorError("ladder_missing", "git pull, or run anchor.py init")
     rungs = service.load_rungs(paths)
     rung = ladder_model.current(rungs)
     if rung is None:
@@ -323,8 +335,8 @@ def build_parser():
     now_parser.add_argument("--trigger", required=True, help="对方可观察的言行，原话或客观描述")
     now_parser.add_argument("--thought", required=True, help="我此刻的想法，原话")
     now_parser.add_argument("--body", help="身体感受，原话")
-    now_parser.add_argument("--certainty", type=int, required=True, help="这个想法有多确定 0–100")
-    now_parser.add_argument("--urge", type=int, required=True, help="想去确认的冲动 0–10")
+    now_parser.add_argument("--certainty", type=int, help="这个想法有多确定 0–100（本人没给就不填，不估）")
+    now_parser.add_argument("--urge", type=int, help="想去确认的冲动 0–10（本人没给就不填，不估）")
     now_parser.add_argument("--action", choices=episode_model.ACTIONS)
     now_parser.add_argument("--script", help="要说的最短脚本（默认按触发自动选）")
     now_parser.add_argument("--conditions", help="条件，逗号分隔：半夜,电话,刚见完面")
