@@ -130,7 +130,7 @@ class DrillsTest(unittest.TestCase):
         misses = [episode(miss=True, miss_conditions=["电话"], date="2026-10-20", id="ep-2026-10-20-01")]
         plan = drills.plan([self.a, self.b, third], views.parse(VIEWS), [], misses, DAY, 7)
         ids = [scene.id for _, scene, _ in plan]
-        self.assertTrue(all(left != right for left, right in zip(ids, ids[1:])))
+        self.assertTrue(all(left != right for left, right in zip(ids, ids[1:], strict=False)))
         self.assertEqual(ids[0], self.a.id)
         self.assertEqual(len(set(ids)), 3)
 
