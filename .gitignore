@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.venv/
+dist/
+.DS_Store
+# Personal data never lives here; it stays in the private Life OS repository.
+*.jsonl
+!tests/**/*.jsonl
+*.zip
