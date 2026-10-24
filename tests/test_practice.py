@@ -125,6 +125,15 @@ class DrillsTest(unittest.TestCase):
         self.assertEqual(plan[0][2].id, "V01")
         self.assertNotEqual(plan[1][2].id, "V01")
 
+    def test_plan_never_repeats_a_scene_on_consecutive_days(self):
+        third = replace(self.a, id="sc-2026-09-02-01", conditions=("当面",))
+        misses = [episode(miss=True, miss_conditions=["电话"], date="2026-10-20", id="ep-2026-10-20-01")]
+        plan = drills.plan([self.a, self.b, third], views.parse(VIEWS), [], misses, DAY, 7)
+        ids = [scene.id for _, scene, _ in plan]
+        self.assertTrue(all(left != right for left, right in zip(ids, ids[1:])))
+        self.assertEqual(ids[0], self.a.id)
+        self.assertEqual(len(set(ids)), 3)
+
     def test_validate_row(self):
         row = {"id": "dr-2026-10-26-01", "date": "2026-10-26", "scene": self.a.id, "view": "V01", "hot": False,
                "suds_before": 60, "suds_after": 30, "within_3s": True, "verbatim": True, "held_30s": True,

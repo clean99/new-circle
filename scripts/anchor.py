@@ -273,7 +273,8 @@ def cmd_extract_scenes(args, paths, day):
         if target.exists():
             continue
         episode = episode_model.find(rows, scene.episode)
-        quote = f"> {episode['my_thought']}\n\n`{episode['source_ref']}`"
+        quote = (f"> {episode['my_thought'] or episode['trigger']}\n\n`{episode['source_ref']}`\n\n"
+                 "预期 SUDS 是抽取时的预估，第一次练完按实际感受改。")
         if args.write:
             write_markdown(target, scene_model.render(scene, day, quote), day)
         written.append(paths.relative(target) if args.write else target.name)

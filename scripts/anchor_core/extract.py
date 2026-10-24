@@ -23,6 +23,7 @@ PATTERN = re.compile("|".join(map(re.escape, LEXICON)), re.I)
 SOURCES = ("claude",)
 ALL_SOURCES = ("claude", "claude_ai", "claude-code", "claude-design")
 REF = re.compile(r"(raw/conversations/\d{4}-\d{2}/[A-Za-z0-9_.-]+\.jsonl)#(.+)\Z")
+MISS_TEXT = {True: "没做到", False: "做到了", None: "—"}
 ELLIPSIS = re.compile(r"…+|\.\.\.+")
 
 
@@ -340,8 +341,9 @@ def sample_report(repo, rows, seed, population, day, excerpt=700):
                   f"- 冲动/确定：{row['urge'] if row['urge'] is not None else '—'} / "
                   f"{row['certainty'] if row['certainty'] is not None else '—'}",
                   f"- 行动：{row['action'] or '—'}｜脚本：{row['script_used'] or '—'}",
-                  f"- 结果：{row['outcome'] or '待回填'}｜{row['outcome_fact'] or '—'}",
-                  f"- miss：{row['miss']}｜条件：{'、'.join(row['miss_conditions']) or '—'}",
+                  f"- 结果：{row['outcome'] or '无后续记录'}｜{row['outcome_fact'] or '—'}",
+                  f"- miss：{MISS_TEXT[row['miss']]}｜条件：{'、'.join(row['miss_conditions']) or '—'}",
+                  f"- 备注：{row['notes'] or '—'}",
                   f"- 出处：`{row['source_ref']}`", "",
                   "原文：", "", "> " + original.replace("\n", "\n> "), "",
                   "核对：□ 对　□ 错：", ""]

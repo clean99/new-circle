@@ -186,11 +186,16 @@ def apply_fact(row, outcome, fact, observed=False, recovery_minutes=None, suds_p
     return updated, warnings
 
 
+def awaiting_fact(row):
+    """Live records still waiting for a fact. Historical extractions without a follow-up are not chased."""
+    return row.get("outcome") is None and row.get("origin") != "export"
+
+
 def due_follow_ups(rows, at):
     """Pending episodes whose 24–72 hour fact window has opened, oldest first."""
     due = []
     for row in rows:
-        if row.get("outcome") is not None:
+        if not awaiting_fact(row):
             continue
         if row.get("recorded_at"):
             start = parse_timestamp(row["recorded_at"])

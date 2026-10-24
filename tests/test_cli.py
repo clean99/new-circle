@@ -259,6 +259,12 @@ class WeeklyTest(unittest.TestCase):
         self.assertEqual(result["buckets"][0]["happened"], 0.5)
         self.assertAlmostEqual(result["brier"], (0.81 + 0.01) / 2)
 
+    def test_miss_plan_uses_target_script_not_what_was_said(self):
+        row = episode(miss=True, action="checked", script_used="你跟谁在一起？", trigger="她说想自己待一会")
+        text = weekly.miss_review(row)
+        self.assertIn("那么我说「好，你先休息。」", text)
+        self.assertIn("当时说：「你跟谁在一起？」", text)
+
     def test_week_bounds(self):
         self.assertEqual(weekly.week_bounds("2026-44")[0].isoformat(), "2026-10-26")
 

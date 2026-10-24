@@ -3,7 +3,8 @@
 from datetime import date, timedelta
 from statistics import mean, median
 
-from .episodes import CHECKING
+from .episodes import CHECKING, awaiting_fact
+from .now import choose_script
 from .store import frontmatter, parse_date
 
 BUCKETS = ((0, 49), (50, 79), (80, 100))
@@ -74,7 +75,7 @@ def metrics(episode_rows, drill_rows, rungs, view_list, start, end):
     ladder_done = [(rung, record) for rung in rungs for record in rung.completions
                    if start <= record[0] <= end]
     reviewed = [view for view in view_list if view.last and start <= view.last <= end]
-    pending = [row for row in episode_rows if row.get("outcome") is None and parse_date(row["date"]) <= end]
+    pending = [row for row in episode_rows if awaiting_fact(row) and parse_date(row["date"]) <= end]
     return {
         "episodes": len(week),
         "no_check_rate": ratio(sum(row["action"] not in CHECKING for row in acted), len(acted)),
@@ -108,8 +109,9 @@ def metrics(episode_rows, drill_rows, rungs, view_list, start, end):
 
 
 def if_then(row):
+    """For a miss, what I actually said is the behaviour to replace, so the plan uses the target script."""
     conditions = "、".join(row.get("miss_conditions") or []) or "____"
-    script = row.get("script_used") or "好，你先休息。"
+    script = choose_script(row.get("trigger"), row.get("my_thought"))
     return f"如果 {conditions}，那么我说「{script}」，说完停，然后去做____。"
 
 
@@ -120,6 +122,7 @@ def miss_review(row):
         f"- 我想了什么：{row.get('my_thought') or '____'}",
         f"- 身体：{row.get('body') or '____'}",
         f"- 我做了什么：{ACTION_NAMES.get(row.get('action'), '____')}"
+        + (f"（当时说：「{row['script_used']}」）" if row.get("script_used") else "")
         + (f"；{row['notes']}" if row.get("notes") else ""),
         f"- 下次 if-then：{if_then(row)}",
     ])
@@ -138,7 +141,7 @@ def counsellor_note(m, current_rung):
         parts.append(f"累计 {cal['n']} 次可核实的预测里，我当时平均确定 {pct(cal['certainty'])}，"
                      f"实际发生 {pct(cal['happened'])}")
     if m["unverifiable"]:
-        parts.append(f"{m['unverifiable']} 次无法核实，我没有去找答案")
+        parts.append(f"{m['unverifiable']} 次无法核实")
     if m["drills"]:
         parts.append(f"演练 {m['drills']} 次，SUDS 平均 {num(m['suds_before'], 0)} → {num(m['suds_after'], 0)}")
     if current_rung:

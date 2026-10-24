@@ -81,6 +81,8 @@ class IdsAndFollowUpTest(unittest.TestCase):
         self.assertEqual(episodes.due_follow_ups([row], recorded + timedelta(hours=30))[0][1], "due")
         self.assertEqual(episodes.due_follow_ups([row], recorded + timedelta(hours=80))[0][1], "overdue")
         self.assertEqual(episodes.due_follow_ups([episode()], recorded + timedelta(hours=80)), [])
+        history = episode("ep-2026-08-01-01", outcome=None, outcome_fact="", origin="export")
+        self.assertEqual(episodes.due_follow_ups([history], recorded), [])
 
 
 if __name__ == "__main__":

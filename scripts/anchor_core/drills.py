@@ -7,7 +7,7 @@ import re
 from . import views as view_model
 from .store import AnchorError, frontmatter, parse_date, read_jsonl, write_jsonl
 
-INTERVALS = (1, 3, 7, 14, 30)
+SCENE_INTERVALS = (2, 4, 7, 14, 30)
 DRILL_ID = re.compile(r"dr-(\d{4}-\d{2}-\d{2})-(\d{2})\Z")
 FIELDS = ("id", "date", "scene", "view", "hot", "suds_before", "suds_after", "within_3s",
           "verbatim", "held_30s", "notes")
@@ -114,19 +114,25 @@ def recent_miss_conditions(episode_rows, day):
 
 
 def choose(scenes, state, misses, day):
-    """Pick today's scene: due by spaced repetition, weighted towards recent miss conditions.
+    """Pick today's scene.
 
-    Scenes that felt below SUDS 40 twice in a row are pushed back so that a closer scene comes up.
+    Due scenes come first (spaced 2/4/7/14/30 days, so the same scene never runs two days in a row).
+    Among them, scenes sharing conditions with misses in the last 14 days weigh most, unpractised scenes
+    get a small bonus for variety, and a scene that felt below SUDS 40 twice in a row is pushed back so
+    that a closer one comes up.
     """
     if not scenes:
         raise AnchorError("no_scenes", "generate scenes from episodes first")
+
     def rank(scene):
         count, last, low = state.get(scene.id, (0, None, 0))
-        due = day if last is None else last + timedelta(days=INTERVALS[min(count, len(INTERVALS)) - 1])
+        due = day if last is None else last + timedelta(days=SCENE_INTERVALS[min(count, len(SCENE_INTERVALS)) - 1])
         overdue = (day - due).days
         overlap = sum(misses.get(condition, 0) for condition in scene.conditions)
-        fit = 1 if 40 <= scene.suds_expected <= 70 else 0
-        weight = overdue + 3 * overlap + fit - 5 * (low >= 2) - count
+        fits = 1 if 40 <= scene.suds_expected <= 70 else 0
+        novelty = 2 if count == 0 else 0
+        too_easy = 5 if low >= 2 else 0
+        weight = 3 * overlap + fits + novelty + min(overdue, 7) / 2 - too_easy
         return (overdue < 0, -weight, scene.id)
 
     return min(scenes, key=rank)
