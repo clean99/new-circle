@@ -205,6 +205,14 @@ class InboxTest(unittest.TestCase):
         self.assertEqual(len(again), 1)
         self.assertEqual(len(self.life.episodes()), 2)
 
+    def test_reading_commands_merge_the_queue_first(self):
+        inbox.write(self.life.paths, [{"op": "view", "id": "V01", "date": "2026-10-26"}], self.life_day())
+        code, data, err = run(self.life, "status")
+        self.assertIn("先合并了 inbox 队列 1 条", err)
+        self.assertEqual((data["inbox"], data["view"]), (0, None))
+        code, data, _ = run(self.life, "validate")
+        self.assertEqual(code, 0)
+
     def test_duplicate_episode_is_skipped(self):
         inbox.write(self.life.paths, [{"op": "episode", **episode()}], self.life_day())
         self.assertEqual(service.ingest(self.life.paths, self.life_day())[0][2], "duplicate")

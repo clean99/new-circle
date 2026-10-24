@@ -346,6 +346,10 @@ def cmd_commit(args, paths, day):
     emit(args, {"committed": True, "commit": head}, [f"已提交 {head}：{args.message}"])
 
 
+# Commands that must see the queue as it is, or that do not read training data.
+NO_AUTO_INGEST = {"ingest", "validate", "init", "extract", "commit"}
+
+
 def build_parser():
     parser = argparse.ArgumentParser(prog="anchor.py", description=__doc__)
     parser.add_argument("--repo", help="Life OS checkout (default: $LIFE_OS_REPO or the life-os skill location)")
@@ -489,6 +493,9 @@ def main(argv=None):
     try:
         paths = resolve_repo(args.repo)
         day = parse_date(args.today) if args.today else now().date()
+        if args.command not in NO_AUTO_INGEST and service.inbox_model.read(paths):
+            merged = service.ingest(paths, day)
+            print(f"anchor: 先合并了 inbox 队列 {len(merged)} 条", file=sys.stderr)
         args.func(args, paths, day)
     except AnchorError as error:
         print(f"anchor: {error}", file=sys.stderr)

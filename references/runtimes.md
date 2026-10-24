@@ -31,7 +31,7 @@ ln -sfn ~/.codex/skills/anchor-training ~/.claude/skills/anchor-training
 - 新 episode 的 `id`：读 `episodes.jsonl` 和 `inbox.md`，取当天未用的最小序号；不确定就不带 `id`，合并时分配。`/fact` 引用尚在队列里的 episode 时直接用它的 `id`。
 - `/weekly`：如果有代码执行环境，把 `episodes.jsonl`、`drills.jsonl`、`views.md`、`ladder.md` 和队列内容读出来，在沙盒里建一个最小目录（`AGENTS.md`、`raw/`、`areas/relationship/…`），运行 `python3 scripts/anchor.py --repo <沙盒> ingest` 和 `weekly`，再把结果用 `update_note` 写到 `areas/relationship/weekly/YYYY-WW.md`。没有代码执行时按 [protocols.md#weekly](protocols.md#weekly) 的定义手算，并在周报里注明"手算"。
 - `/drill`：读 `scenes/`、`drills.jsonl`、`views.md`，按 [protocols.md#drill](protocols.md#drill) 选题；或直接用 `drills/` 里预生成的当天演练稿。语音模式下由 bot 说出 cue。
-- 本地 Claude Code 下次运行任何命令前先 `anchor.py ingest`，把队列合并进正式数据并提交。
+- 合并：Life OS 仓库的 GitHub Action（`.github/workflows/anchor-inbox.yml`）在 `inbox.md` 被推送后自动合并并提交；本地 `anchor.py` 的读写命令也会先合并队列。两者都按顺序执行、每行只执行一次，失败的行留在队列里。
 
 ## Grok Bot 与其他 agent
 
