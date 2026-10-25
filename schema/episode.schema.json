@@ -28,7 +28,7 @@
     "notes": {"type": "string"},
     "recorded_at": {"type": "string", "description": "ISO 8601 with timezone"},
     "origin": {"enum": ["now", "export", "capture", "inbox", "manual"]},
-    "review": {"enum": ["pending", "confirmed", "rejected"]}
+    "review": {"enum": ["pending", "accepted", "confirmed", "rejected"]}
   },
   "allOf": [
     {"if": {"properties": {"outcome": {"enum": ["happened", "not_happened"]}}},

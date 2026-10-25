@@ -98,7 +98,7 @@ python3 scripts/anchor.py review ep-2026-01-15-02 --reject --note "不是我写�
 python3 scripts/anchor.py review --sheet areas/relationship/extraction/2026-10-25-sample.md
 ```
 
-抽样核对表里每条末尾是「核对：□ 对　□ 错：」，把「□ 对」改成「☑ 对」表示确认，在「错：」后写原因表示否掉，然后用 `--sheet` 一次导入。否掉的 episode 留在文件里（不删原始记录），但它的剧本不再进入演练选题，也不计入周报。bot 只记录本人的判断，不替本人确认。
+抽样核对表里每条末尾是「核对：□ 对　□ 错：」，把「□ 对」改成「☑ 对」表示确认，在「错：」后写原因表示否掉，然后用 `--sheet` 一次导入。抽样全部核对通过后，`anchor.py review --accept-pending` 把其余待核对记录标为 `accepted`（批次验收，不等于逐条确认），之后仍可单独否掉。否掉的 episode 留在文件里（不删原始记录），但它的剧本不再进入演练选题，也不计入周报。bot 只记录本人的判断，不替本人确认。
 
 ## weekly
 

@@ -37,7 +37,7 @@ areas/relationship/extraction/        历史素材的抽取报告与抽样核对
 - `urge` 0–10，`certainty`/`suds_peak` 0–100，`recovery_minutes` 非负整数。
 - `outcome` 为 `happened`/`not_happened` 时 `outcome_fact` 必填；事实看起来是对方的解释时给出警告，`/fact` 默认改记 `unverifiable`。
 - `miss=true` 必须有 `action`。
-- 可选扩展字段：`recorded_at`（带时区的记录时刻，用于 24–72 小时追问）、`origin`（`now`/`export`/`capture`/`inbox`/`manual`）、`review`（历史抽取的核对状态 `pending`/`confirmed`/`rejected`）。不允许其他字段。
+- 可选扩展字段：`recorded_at`（带时区的记录时刻，用于 24–72 小时追问）、`origin`（`now`/`export`/`capture`/`inbox`/`manual`）、`review`（历史抽取的核对状态：`pending` 待核对、`accepted` 批次经本人抽样验收但未逐条核对、`confirmed` 本人逐条确认、`rejected` 本人否掉）。不允许其他字段。
 - 历史抽取的 `my_thought`、`body` 必须是 `source_ref` 那条本人消息的逐字片段（忽略空白，可用 `…` 连接同一消息里的几段），`anchor.py extract verify` 检查。
 
 ## scene

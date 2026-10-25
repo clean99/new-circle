@@ -147,6 +147,13 @@ class ReviewTest(unittest.TestCase):
         code, _, err = run(self.life, "review", "ep-2026-08-29-01")
         self.assertIn("review_needs_confirm_or_reject", err)
 
+    def test_accept_pending_after_sample_check(self):
+        run(self.life, "review", "ep-2026-08-28-01", "--confirm")
+        code, data, _ = run(self.life, "review", "--accept-pending")
+        self.assertEqual((code, data["accepted"]), (0, ["ep-2026-08-29-01"]))
+        code, data, _ = run(self.life, "review")
+        self.assertEqual(data["counts"], {"pending": 0, "accepted": 1, "confirmed": 1, "rejected": 0})
+
     def test_rejected_episode_leaves_practice_and_metrics(self):
         run(self.life, "review", "ep-2026-08-28-01", "--reject")
         code, _, err = run(self.life, "drill")

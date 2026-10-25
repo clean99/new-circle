@@ -13,7 +13,8 @@ ACTIONS = ("checked", "chased", "held", "said_ok", "said_stop", "said_no", "othe
 CHECKING = {"checked", "chased"}
 OUTCOMES = ("happened", "not_happened", "unverifiable")
 ORIGINS = ("now", "export", "capture", "inbox", "manual")
-REVIEWS = ("pending", "confirmed", "rejected")
+# accepted: the batch passed my sample check but this row was not checked one by one.
+REVIEWS = ("pending", "accepted", "confirmed", "rejected")
 EPISODE_ID = re.compile(r"ep-(\d{4}-\d{2}-\d{2})-(\d{2})\Z")
 FOLLOW_UP = (timedelta(hours=24), timedelta(hours=72))
 

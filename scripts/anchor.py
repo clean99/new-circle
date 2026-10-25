@@ -320,6 +320,12 @@ def cmd_review(args, paths, day):
         emit(args, {"applied": marks}, [f"{identity}: {status}" + (f"（{note}）" if note else "")
                                         for identity, status, note in marks] or ["核对表里还没有打勾或写「错：」。"])
         return
+    if args.accept_pending:
+        accepted = [row["id"] for row in episode_model.load(paths) if row.get("review") == "pending"]
+        for identity in accepted:
+            service.review(paths, identity, "accepted")
+        emit(args, {"accepted": accepted}, [f"{len(accepted)} 条待核对的记录标为 accepted（批次已抽样验收，未逐条核对）"])
+        return
     if args.id:
         if args.confirm == args.reject:
             raise AnchorError("review_needs_confirm_or_reject")
@@ -329,7 +335,7 @@ def cmd_review(args, paths, day):
     rows = [row for row in episode_model.load(paths) if row.get("review")]
     counts = {status: sum(row["review"] == status for row in rows) for status in episode_model.REVIEWS}
     pending = [row for row in rows if row["review"] == "pending"][:args.limit]
-    lines = [f"待核对 {counts['pending']}｜已确认 {counts['confirmed']}｜已否掉 {counts['rejected']}"]
+    lines = [f"待核对 {counts['pending']}｜抽样验收 {counts['accepted']}｜已确认 {counts['confirmed']}｜已否掉 {counts['rejected']}"]
     lines += [f"{row['id']}：{now_model.shorten(row['my_thought'] or row['trigger'])}" for row in pending]
     emit(args, {"counts": counts, "pending": [row["id"] for row in pending]}, lines)
 
@@ -478,6 +484,8 @@ def build_parser():
     review.add_argument("--reject", action="store_true")
     review.add_argument("--note")
     review.add_argument("--sheet", help="抽样核对表路径，读取「☑ 对」与「错：原因」")
+    review.add_argument("--accept-pending", action="store_true",
+                        help="抽样核对通过后，把其余待核对记录标为 accepted（不等于逐条确认）")
     review.add_argument("--limit", type=int, default=10)
     review.set_defaults(func=cmd_review)
 
